@@ -75,5 +75,3 @@ RUN cd /CUT3R/src/croco/models/curope/ && \
     python setup.py install && \
     cd ../../../../
 
-# Set the default command to activate the conda environment and start a bash shell
-CMD ["bash", "-c", "conda activate cut3r && exec /bin/bash"]
