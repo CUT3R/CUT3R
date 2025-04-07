@@ -65,14 +65,15 @@ RUN pip install ninja && \
 # Add conda environment activation to .bashrc
 RUN echo "conda activate cut3r" >> ~/.bashrc
 
-# Compile the cuda kernels for RoPE (as in CroCo v2)
-RUN cd /CUT3R/src/croco/models/curope/ && \
-    python setup.py build_ext --inplace && \
-    cd ../../../../
-
 # Set environment variable to enable device-side assertions for debugging
 ENV TORCH_USE_CUDA_DSA=1
 ENV CUDA_LAUNCH_BLOCKING=1
+
+# Compile the cuda kernels for RoPE (as in CroCo v2)
+RUN cd /CUT3R/src/croco/models/curope/ && \
+    python setup.py build_ext --inplace && \
+    python setup.py install && \
+    cd ../../../../
 
 # Set the default command to activate the conda environment and start a bash shell
 CMD ["bash", "-c", "conda activate cut3r && exec /bin/bash"]
