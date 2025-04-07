@@ -35,6 +35,9 @@ RUN conda init bash && \
 
 WORKDIR /CUT3R
 
+# Clone the repository directly to the working directory
+RUN git clone https://github.com/CUT3R/CUT3R.git .
+
 # Create the conda environment with Python 3.11 as specified in the README
 RUN conda create -n cut3r python=3.11 cmake=3.14.0 -y
 
@@ -45,7 +48,6 @@ SHELL ["conda", "run", "-n", "cut3r", "/bin/bash", "-c"]
 RUN conda install pytorch torchvision pytorch-cuda=12.1 -c pytorch -c nvidia
 
 # Install other dependencies from requirements.txt
-COPY requirements.txt /CUT3R/
 RUN pip install -r requirements.txt
 
 # Install additional dependencies mentioned in the README
@@ -62,3 +64,15 @@ RUN pip install ninja && \
 
 # Add conda environment activation to .bashrc
 RUN echo "conda activate cut3r" >> ~/.bashrc
+
+# Compile the cuda kernels for RoPE (as in CroCo v2)
+RUN cd /CUT3R/src/croco/models/curope/ && \
+    python setup.py build_ext --inplace && \
+    cd ../../../../
+
+# Set environment variable to enable device-side assertions for debugging
+ENV TORCH_USE_CUDA_DSA=1
+ENV CUDA_LAUNCH_BLOCKING=1
+
+# Set the default command to activate the conda environment and start a bash shell
+CMD ["bash", "-c", "conda activate cut3r && exec /bin/bash"]
