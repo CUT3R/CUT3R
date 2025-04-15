@@ -6,7 +6,7 @@
 <hr>
 
 <br>
-Official implementation of <strong>Continuous 3D Perception Model with Persistent State</strong>, CVPR 2025
+Official implementation of <strong>Continuous 3D Perception Model with Persistent State</strong>, CVPR 2025 (Oral)
 
 [*QianqianWang**](https://qianqianwang68.github.io/),
 [*Yifei Zhang**](https://forrest-110.github.io/),

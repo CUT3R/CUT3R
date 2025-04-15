@@ -433,11 +433,22 @@ python3 preprocess_cop3d.py --cop3d_dir /path/to/cop3d \
 
 ~~Due to current potential problems with license, you may need to run multi-view stereo on DL3DV by yourself (which is extremely time consuming). If this is done, then you can use our preprocess script:~~
 
-```
-python3 preprocess_dl3dv.py --dl3dv_dir /path/to/dl3dv \
-       --output_dir /path/to/processed_dl3dv
-```
-Then, download our released [depths and masks](https://drive.google.com/file/d/14E15EG5NJgWH5UVYubrPSSFXmReCIe7f/view?usp=drive_link) and combine it with your `/path/to/processed_dl3dv`.
+~~```~~
+~~python3 preprocess_dl3dv.py --dl3dv_dir /path/to/dl3dv \ 
+       --output_dir /path/to/processed_dl3dv~~
+~~```~~
+
+**Update: We've released the full version of our processed DL3DV dataset!**
+
+To use our processed DL3DV data, please ensure that you **first** cite the [original DL3DV work](https://github.com/DL3DV-10K/Dataset) and adhere to their licensing terms.
+
+You can then download the following components:
+
+- [RGB images and camera parameters](https://huggingface.co/datasets/zhangify/CUT3R_release/tree/main/processed_dl3dv_ours_rgb_cam_1)
+
+- [Depthmaps and masks](https://drive.google.com/file/d/14E15EG5NJgWH5UVYubrPSSFXmReCIe7f/view?usp=drive_link)
+
+After downloading, merge the components using the provided script:
 ```
 python3 merge_dl3dv.py # remember to change necessary paths
 ```
