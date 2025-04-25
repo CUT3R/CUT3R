@@ -50,6 +50,7 @@ printf "\n--- Run the Perception container ---\n"
 # /tmp/.X11-unix/ directory stores Unix-domain sockets (stream of bytes) used by the X11 server.
 docker run \
     --name "$CONTAINER_NAME" \
+    -p 8080:8080 \
     --rm -itd \
     --runtime nvidia \
     --env USER="$USER" \
@@ -63,11 +64,12 @@ docker run \
     --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
     --env HOME="$HOME" \
     --workdir="$PWD" \
-    --volume="$PWD:$PWD" \
     --env HISTFILE="$PWD/artifacts/shell_history" \
     --volume "$HOME"/.bashrc:"$HOME"/.bashrc --volume "$HOME"/.bash_aliases:"$HOME"/.bash_aliases \
     --volume "$PWD"/scripts/docker/shell_config/zshrc_sr:"$HOME"/.zshrc \
     --volume "$HOME"/.sudo_as_admin_successful:"$HOME"/.sudo_as_admin_successful \
+    --volume "/home/seb/dev/personal/art_in_3d/photogrammetry/cut3r":"/home/seb/dev/personal/art_in_3d/photogrammetry/cut3r" \
+    --volume "/home/seb/dev/personal/art_in_3d/photogrammetry/datasets/2025-01-20-Julie/Video-raw/video_raw":"/home/seb/dev/personal/art_in_3d/photogrammetry/datasets/2025-01-20-Julie/Video-raw/video_raw" \
     "$IMAGE_TAG" \
     "$EXEC_SHELL"
 

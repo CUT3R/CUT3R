@@ -70,7 +70,7 @@ def loss_of_one_batch(
     if symmetrize_batch:
         batch = make_batch_symmetric(batch)
 
-    with torch.cuda.amp.autocast(enabled=not inference):
+    with torch.amp.autocast('cuda', enabled=not inference):
         if inference:
             output, state_args = model(batch, ret_state=True)
             preds, batch = output.ress, output.views
@@ -80,7 +80,7 @@ def loss_of_one_batch(
             output = model(batch)
             preds, batch = output.ress, output.views
 
-        with torch.cuda.amp.autocast(enabled=False):
+        with torch.amp.autocast('cuda', enabled=False):
             loss = criterion(batch, preds) if criterion is not None else None
 
     result = dict(views=batch, pred=preds, loss=loss)
@@ -111,7 +111,7 @@ def loss_of_one_batch_tbptt(
     all_preds = []
     all_loss = 0.0
     all_loss_details = {}
-    with torch.cuda.amp.autocast(enabled=not inference):
+    with torch.amp.autocast('cuda', enabled=not inference):
         with torch.no_grad():
             (feat, pos, shape), (
                 init_state_feat,
@@ -155,7 +155,7 @@ def loss_of_one_batch_tbptt(
                         preds.append(res)
                         all_preds.append({k: v.detach() for k, v in res.items()})
                         chunk.append(batch[i])
-                with torch.cuda.amp.autocast(enabled=False):
+                with torch.amp.autocast('cuda', enabled=False):
                     loss, loss_details = (
                         criterion(chunk, preds, camera1=batch[0]["camera_pose"])
                         if criterion is not None
@@ -188,7 +188,7 @@ def loss_of_one_batch_tbptt(
                     preds.append(res)
                     all_preds.append({k: v.detach() for k, v in res.items()})
                     chunk.append(batch[i])
-                with torch.cuda.amp.autocast(enabled=False):
+                with torch.amp.autocast('cuda', enabled=False):
                     loss, loss_details = (
                         criterion(chunk, preds, camera1=batch[0]["camera_pose"])
                         if criterion is not None
@@ -251,7 +251,7 @@ def inference_step(view, state_args, model, device, verbose=True):
         else:
             view[name] = view[name].to(device, non_blocking=True)
 
-    with torch.cuda.amp.autocast(enabled=False):
+    with torch.amp.autocast('cuda', enabled=False):
         state_feat, state_pos, init_state_feat, mem, init_mem = state_args
         pred, _ = model.inference_step(
             view, state_feat, state_pos, init_state_feat, mem, init_mem
@@ -279,7 +279,7 @@ def inference_recurrent(groups, model, device, verbose=True):
     if verbose:
         print(f">> Inference with model on {len(groups)} image/raymaps")
 
-    with torch.cuda.amp.autocast(enabled=False):
+    with torch.amp.autocast('cuda', enabled=False):
         preds, batch, state_args = model.forward_recurrent(
             groups, device, ret_state=True
         )

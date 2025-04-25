@@ -157,7 +157,7 @@ def main(args):
                                             ).bool()
                                     new_views.append(new_view)
                             batch = new_views
-                        with torch.cuda.amp.autocast(enabled=False):
+                        with torch.amp.autocast('cuda', enabled=False):
                             start = time.time()
                             output = model(batch)
                             end = time.time()
