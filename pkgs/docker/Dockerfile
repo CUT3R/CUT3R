@@ -1,11 +1,15 @@
 # ----- Image with CUDA and cuDNN -----
-# Docker Hub: https://hub.docker.com/layers/nvidia/cuda/12.2.2-cudnn8-devel-ubuntu22.04/images/sha256-217134b60289ced62b47463be32584329baf35cb55a9ccda6626b91bd59803be
-# Version released on Nov 22, 2023 at 6:56 am
-FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04@sha256:217134b60289ced62b47463be32584329baf35cb55a9ccda6626b91bd59803be AS base-compilation
+FROM nvidia/cuda:12.1-cudnn8-devel-ubuntu22.04@sha256:217134b60289ced62b47463be32584329baf35cb55a9ccda6626b91bd59803be AS base-compilation
 LABEL maintainer="sebastien@summerrobotics"
 LABEL org.opencontainers.image.authors="sebastien@summerrobotics"
 
 ARG TARGETARCH
+
+ARG CUDA_HOME=/usr/local/cuda
+ARG PATH=$CUDA_HOME/bin:$PATH
+ARG LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9"
+ENV CMAKE_CUDA_ARCHITECTURES="75;80;86;89"
 
 # ----- APT Configuration -----
 # Disable interactive configuration of apt installs
@@ -30,22 +34,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tzdata \
     && rm -rf /var/lib/apt/lists/* && apt-get clean && apt-get autoclean && apt-get -y autoremove && \
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-
-# ----- Setup Python -----
-ENV PYTHONFAULTHANDLER=1
-# Force stdin, stdout and stderr to be totally unbuffered
-ENV PYTHONUNBUFFERED=1
-# Don't write .pyc files
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PIP_NO_CACHE_DIR=off
-# Suppress pip upgrade warning
-# PIP_DISABLE_PIP_VERSION_CHECK=on \
-ENV PIP_DEFAULT_TIMEOUT=100
-ENV VIRTUAL_ENV=/opt/python/venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-COPY pkgs/compilation_infrastructure/python3/install_for_linux.sh /tmp/sr/pkgs/compilation_infrastructure/python3/install_for_linux.sh
-RUN bash /tmp/sr/pkgs/compilation_infrastructure/python3/install_for_linux.sh && rm -rf /tmp/sr
 
 
 # ----- Add APT mirror dependencies -----
@@ -74,9 +62,23 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
 
 # ----- Install CMake with Kitware PPA -----
 # Using release candidates for Ubuntu. Sources: https://apt.kitware.com
-COPY pkgs/compilation_infrastructure/cmake/install_for_linux.sh /tmp/sr/pkgs/compilation_infrastructure/cmake/install_for_linux.sh
-RUN bash /tmp/sr/pkgs/compilation_infrastructure/cmake/install_for_linux.sh && rm -rf /tmp/sr
+COPY pkgs/compilation_infrastructure/cmake/install_for_linux.sh /tmp/docker/pkgs/compilation_infrastructure/cmake/install_for_linux.sh
+RUN bash /tmp/docker/pkgs/compilation_infrastructure/cmake/install_for_linux.sh && rm -rf /tmp/docker
 
+# ----- Setup Python -----
+ENV PYTHONFAULTHANDLER=1
+# Force stdin, stdout and stderr to be totally unbuffered
+ENV PYTHONUNBUFFERED=1
+# Don't write .pyc files
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PIP_NO_CACHE_DIR=off
+# Suppress pip upgrade warning
+# PIP_DISABLE_PIP_VERSION_CHECK=on \
+ENV PIP_DEFAULT_TIMEOUT=100
+ENV VIRTUAL_ENV=/opt/python/venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+COPY pkgs/compilation_infrastructure/python3/install_for_linux.sh /tmp/docker/pkgs/compilation_infrastructure/python3/install_for_linux.sh
+RUN bash /tmp/docker/pkgs/compilation_infrastructure/python3/install_for_linux.sh && rm -rf /tmp/docker
 
 # -- APT packages for 3rdparty packages in /opt
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -91,11 +93,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* && apt-get clean && apt-get autoclean && apt-get -y autoremove
 
 # -- Install Conda
-ENV SR_CONDA_ENV_NAME="cut3r"
-ENV SR_CONDA_PATH="/opt/miniconda"
-COPY pkgs/conda/ /tmp/sr/pkgs/conda/
-RUN bash /tmp/sr/pkgs/conda/install_conda.sh $SR_CONDA_PATH $SR_CONDA_ENV_NAME && rm -rf /tmp/sr
-
+# ENV SR_CONDA_ENV_NAME="cut3r"
+# ENV SR_CONDA_PATH="/opt/miniconda"
+# COPY pkgs/conda/ /tmp/docker/pkgs/conda/
+# RUN bash /tmp/docker/pkgs/conda/install_conda.sh $SR_CONDA_PATH $SR_CONDA_ENV_NAME && rm -rf /tmp/docker
 
 # ----- Install PyTorch -----
 RUN mkdir -p /opt/cache/python/pip && \
@@ -113,17 +114,27 @@ RUN mkdir -p /opt/cache/python/pip && \
     python3 -m pip install -r /tmp/requirements.txt --cache-dir /opt/cache/python/pip && \
     chmod -R 777 /opt/python/venv
 
-# ----- Add Git-LFS in the container for convenience -----
-COPY pkgs/dev/git-lfs/install_for_linux.sh /tmp/sr/pkgs/dev/git-lfs/install_for_linux.sh
-RUN bash /tmp/sr/pkgs/dev/git-lfs/install_for_linux.sh && rm -rf /tmp/sr
+# training-logging, evaluation, 3D
+RUN mkdir -p /opt/cache/python/pip && \
+    chmod -R 777 /opt/cache && \
+    python3 -m pip install --no-cache-dir \
+      --no-build-isolation \
+      git+https://github.com/nerfstudio-project/gsplat.git \
+      --cache-dir /opt/cache/python/pip && \
+    chmod -R 777 /opt/python/venv
 
-# -- Install AWS CLI V2 in /usr/local/bin/aws
-COPY pkgs/aws/install_for_linux.sh /tmp/sr/pkgs/aws/install_for_linux.sh
-RUN bash /tmp/sr/pkgs/aws/install_for_linux.sh && rm -rf /tmp/sr
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libomp-dev \
+    && rm -rf /var/lib/apt/lists/* && apt-get clean && apt-get autoclean && apt-get -y autoremove
+
+COPY src/croco/models/curope /tmp/docker/curope
+RUN cd /tmp/docker/curope && \
+    python setup.py build_ext --inplace && \
+    rm -rf /tmp/docker
 
 # ----- Install ZSH -----
-COPY pkgs/dev/zsh/install_for_linux.sh /tmp/sr/pkgs/dev/zsh/install_for_linux.sh
-RUN bash /tmp/sr/pkgs/dev/zsh/install_for_linux.sh && rm -rf /tmp/sr
+COPY pkgs/dev/zsh/install_for_linux.sh /tmp/docker/pkgs/dev/zsh/install_for_linux.sh
+RUN bash /tmp/docker/pkgs/dev/zsh/install_for_linux.sh && rm -rf /tmp/docker
 # Configure powerlevel10k theme
 COPY pkgs/docker/shell_config/p10k_config_sr.zsh /opt/shell_config/.p10k.zsh
 
@@ -134,3 +145,7 @@ ENV DISPLAY=:0
 ENV NO_AT_BRIDGE=1
 # Terminal colors
 ENV TERM=xterm-256color
+
+# ----- Entrypoint -----
+COPY --chmod=755 pkgs/docker/container-entrypoint-base.sh /opt/container/container-entrypoint-base.sh
+ENTRYPOINT ["/opt/nvidia/nvidia_entrypoint.sh", "/opt/container/container-entrypoint-base.sh"]

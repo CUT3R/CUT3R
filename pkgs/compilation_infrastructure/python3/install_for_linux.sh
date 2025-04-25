@@ -14,6 +14,9 @@ python3 --version
 python3 -m venv "$VIRTUAL_ENV"
 mkdir -p /opt/cache/python/pip
 chmod -R 777 /opt/cache
-python3 -m pip install --upgrade pip==24.3.1 \
+python3 -m pip install --upgrade \
+    pip==24.3.1 \
+    setuptools \
+    wheel \
     --cache-dir /opt/cache/python/pip
 chmod -R 777 "$VIRTUAL_ENV"
