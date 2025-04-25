@@ -21,3 +21,5 @@ h5py
 accelerate
 transformers
 scikit-learn
+open3d
+evo
