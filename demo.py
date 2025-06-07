@@ -369,19 +369,48 @@ def run_inference(args):
     model.eval()
 
     # Run inference.
-    print("Running inference...")
+    # print("Running inference...")
+    # start_time = time.time()
+    # outputs, state_args = inference(views, model, device)
+    # total_time = time.time() - start_time
+    # per_frame_time = total_time / len(views)
+
+    # Run inference in small chunks to avoid OOM
+    print("Running inference in batches…")
+    batch_size = 16   # ← tune this (e.g. 4, 8, 16) based on your GPU
+    all_preds = []
+    all_views = []
+    state_args = None
     start_time = time.time()
-    outputs, state_args = inference(views, model, device)
+    for i in range(0, len(views), batch_size):
+        chunk = views[i : i + batch_size]
+        print(f"  batch {i//batch_size+1}/{(len(views)-1)//batch_size+1}  [{len(chunk)} views]")
+        out_chunk, state_chunk = inference(chunk, model, device)
+        # out_chunk is a dict with keys 'pred' and 'views'
+        all_preds .extend(out_chunk['pred'])
+        all_views.extend(out_chunk['views'])
+        # keep the state from the last chunk (you could also store per-chunk if needed)
+        state_args = state_chunk
+        torch.cuda.empty_cache()
     total_time = time.time() - start_time
     per_frame_time = total_time / len(views)
+
     print(
         f"Inference completed in {total_time:.2f} seconds (average {per_frame_time:.2f} s per frame)."
     )
 
     # Process outputs for visualization.
     print("Preparing output for visualization...")
+    # pts3ds_other, colors, conf, cam_dict = prepare_output(
+    #     outputs, args.output_dir, 1, True
+    # )
+    # reconstruct the exact dict that prepare_output expects
+    combined = {
+        'pred': all_preds,
+        'views': all_views
+    }
     pts3ds_other, colors, conf, cam_dict = prepare_output(
-        outputs, args.output_dir, 1, True
+        combined, args.output_dir, revisit=1, use_pose=True
     )
 
     # Convert tensors to numpy arrays for visualization.
