@@ -50,6 +50,7 @@ Official implementation of <strong>Continuous 3D Perception Model with Persisten
 ## Getting Started
 
 ### Installation
+#### Native Installation
 
 1. Clone CUT3R.
 ```bash
@@ -77,6 +78,23 @@ pip install open3d
 cd src/croco/models/curope/
 python setup.py build_ext --inplace
 cd ../../../../
+```
+
+
+#### Docker Installation
+
+Alternatively, Docker can be used to automate environment setup. To install Docker with the NVIDIA
+container toolkit, [consult this guide](https://github.com/garylvov/dev_env/tree/main/setup_scripts/nvidia).
+
+The Docker setup will create a complete environment with all dependencies, but will not download model weights.
+The rest of this ```README``` has shared instructions for native and docker installations.
+
+
+```bash
+# Build the container
+docker build -t cut3r:latest .
+# Enter the container
+docker run --gpus all --network host -v $(pwd):/CUT3R --rm -it cut3r /bin/bash
 ```
 
 ### Download Checkpoints
