@@ -53,3 +53,8 @@ docs/_build/
 *.pth
 data
 src/checkpoints
+
+# Ignore output files
+*.npz
+*.png
+*.npy
