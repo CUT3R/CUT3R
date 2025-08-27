@@ -1,19 +1,13 @@
-import argparse
-import random
-import gzip
-import json
 import os
 import os.path as osp
-import torch
-import PIL.Image
 from PIL import Image
 import numpy as np
-import cv2
 from tqdm import tqdm
-import matplotlib.pyplot as plt
-import shutil
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 import src.dust3r.datasets.utils.cropping as cropping  # noqa
-from scipy.spatial.transform import Rotation as R
 
 
 def get_parser():

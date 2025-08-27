@@ -272,12 +272,12 @@ python3 preprocess_wildrgbd.py --wildrgbd_dir /path/to/your/raw/data --output_di
 
 First preprocess the colmap results provided by Mapfree:
 ```
-python3 preprocess_mapfree.py --mapfree_dir /path/to/train/data --colmap_dir /path/to/colmap/data --output_dir  /path/to/first/outdir
+python3 preprocess_mapfree.py --mapfree_dir /path/to/train/data --colmap_dir /path/to/colmap/data # --output_dir  /path/to/first/outdir
 ```
 
 Then re-organize the data structure:
 ```
-python3 preprocess_mapfree2.py --mapfree_dir /path/to/first/outdir --output_dir  /path/to/final/outdir
+python3 preprocess_mapfree2.py --mapfree_dir /path/to/colmap/data --output_dir  /path/to/final/outdir
 ```
 
 Finally, download our released [depths and masks](https://drive.google.com/file/d/1gJGEAV5e08CR6nK2gH9i71a7_WJ4ANwc/view?usp=drive_link) and combine it with your `/path/to/final/outdir`.

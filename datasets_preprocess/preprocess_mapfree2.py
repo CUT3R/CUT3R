@@ -28,7 +28,7 @@ def main(rootdir, outdir):
         subseqs = [
             f
             for f in os.listdir(osp.join(rootdir, env))
-            if os.path.isdir(osp.join(rootdir, env, f))
+            if os.path.isdir(osp.join(rootdir, env, f)) and 'dense' in f
         ]
         for subseq in subseqs:
             sparse_dir = osp.join(rootdir, env, subseq, "sparse")
