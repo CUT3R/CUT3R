@@ -342,7 +342,7 @@ def train_one_epoch(
 
         image1 = image1.to(device, non_blocking=True)
         image2 = image2.to(device, non_blocking=True)
-        with torch.cuda.amp.autocast(enabled=bool(args.amp)):
+        with torch.amp.autocast('cuda', enabled=bool(args.amp)):
             out, mask, target = model(image1, image2)
             loss = criterion(out, mask, target)
 

@@ -214,7 +214,7 @@ class DPTPts3dPose(nn.Module):
         if self.has_pose:
             pose_token = x[-1][:, 0].clone()
             token = x[-1][:, 1:]
-            with torch.cuda.amp.autocast(enabled=False):
+            with torch.amp.autocast('cuda', enabled=False):
                 pose = self.pose_head(pose_token)
 
             token_cross = token.clone()
@@ -223,7 +223,7 @@ class DPTPts3dPose(nn.Module):
             x = x[:-1] + [token]
             x_cross = x[:-1] + [token_cross]
 
-        with torch.cuda.amp.autocast(enabled=False):
+        with torch.amp.autocast('cuda', enabled=False):
             self_out = checkpoint(
                 self.dpt_self,
                 x,
