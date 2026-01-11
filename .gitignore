@@ -53,3 +53,6 @@ docs/_build/
 *.pth
 data
 src/checkpoints
+examples/dna_examples/
+examples/real_sample/
+output/

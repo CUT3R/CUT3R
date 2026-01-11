@@ -823,6 +823,9 @@ class ARCroco3DStereo(CroCoNet):
         all_state_args = [(state_feat, state_pos, init_state_feat, mem, init_mem)]
         ress = []
         for i in range(len(views)):
+            start_event = torch.cuda.Event(enable_timing=True)
+            end_event = torch.cuda.Event(enable_timing=True)
+            start_event.record()
             feat_i = feat[i]
             pos_i = pos[i]
             if self.pose_head_flag:
@@ -887,6 +890,9 @@ class ARCroco3DStereo(CroCoNet):
             all_state_args.append(
                 (state_feat, state_pos, init_state_feat, mem, init_mem)
             )
+            end_event.record()
+            torch.cuda.synchronize()
+            print(f"Refined Frame {i} inference time: {start_event.elapsed_time(end_event):.2f} ms")
         if ret_state:
             return ress, views, all_state_args
         return ress, views

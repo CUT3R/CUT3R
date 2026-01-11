@@ -75,6 +75,11 @@ def parse_args():
         default="./demo_tmp",
         help="value for tempfile.tempdir",
     )
+    parser.add_argument(
+        "--profile",
+        action="store_true",
+        help="Enable CUDA profiling for inference performance",
+    )
 
     return parser.parse_args()
 
@@ -371,7 +376,7 @@ def run_inference(args):
     # Run inference.
     print("Running inference...")
     start_time = time.time()
-    outputs, state_args = inference(views, model, device)
+    outputs, state_args = inference(views, model, device, profile=args.profile)
     total_time = time.time() - start_time
     per_frame_time = total_time / len(views)
     print(

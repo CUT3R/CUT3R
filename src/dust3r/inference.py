@@ -217,7 +217,7 @@ def loss_of_one_batch_tbptt(
 
 
 @torch.no_grad()
-def inference(groups, model, device, verbose=True):
+def inference(groups, model, device, verbose=True, profile=False):
     ignore_keys = set(
         ["depthmap", "dataset", "label", "instance", "idx", "true_shape", "rng"]
     )
@@ -233,7 +233,75 @@ def inference(groups, model, device, verbose=True):
     if verbose:
         print(f">> Inference with model on {len(groups)} image/raymaps")
 
-    res, state_args = loss_of_one_batch(groups, model, None, None, inference=True)
+    # Instrumentation for profiling
+    if profile:
+        events = []
+        
+        def start_hook(module, input):
+            start = torch.cuda.Event(enable_timing=True)
+            start.record()
+            events.append({"start": start, "type": "start", "module": "decoder"})
+
+        def end_hook(module, input, output):
+            end = torch.cuda.Event(enable_timing=True)
+            end.record()
+            events.append({"end": end, "type": "end", "module": "decoder"})
+            
+        def enc_start_hook(module, input):
+            start = torch.cuda.Event(enable_timing=True)
+            start.record()
+            events.append({"start": start, "type": "start", "module": "encoder"})
+
+        def enc_end_hook(module, input, output):
+            end = torch.cuda.Event(enable_timing=True)
+            end.record()
+            events.append({"end": end, "type": "end", "module": "encoder"})
+
+        # Register hooks
+        # Encoder measures batch processing time (total for all views)
+        handle1_enc = model.patch_embed.register_forward_pre_hook(enc_start_hook)
+        handle2_enc = model.enc_norm.register_forward_hook(enc_end_hook)
+        
+        # Decoder measures per-frame recurrent loop
+        handle1_dec = model.decoder_embed.register_forward_pre_hook(start_hook)
+        handle2_dec = model.downstream_head.register_forward_hook(end_hook)
+
+    try:
+        res, state_args = loss_of_one_batch(groups, model, None, None, inference=True)
+    finally:
+        if profile:
+            handle1_enc.remove()
+            handle2_enc.remove()
+            handle1_dec.remove()
+            handle2_dec.remove()
+
+    if profile:
+        torch.cuda.synchronize()
+        
+        # Process events
+        enc_start = [e["start"] for e in events if e["type"] == "start" and e["module"] == "encoder"][0]
+        enc_end = [e["end"] for e in events if e["type"] == "end" and e["module"] == "encoder"][0]
+        total_enc_time = enc_start.elapsed_time(enc_end)
+        avg_enc_time = total_enc_time / len(groups)
+        
+        dec_starts = [e["start"] for e in events if e["type"] == "start" and e["module"] == "decoder"]
+        dec_ends = [e["end"] for e in events if e["type"] == "end" and e["module"] == "decoder"]
+        
+        print("\n--- Profiling Report (Full Model) ---")
+        print(f"Total Encoder Time (Batch): {total_enc_time:.2f} ms")
+        print(f"Average Encoder Time per Frame: {avg_enc_time:.2f} ms")
+        
+        avg_total = 0
+        for i, (s, e) in enumerate(zip(dec_starts, dec_ends)):
+            dec_time = s.elapsed_time(e)
+            total_frame_time = avg_enc_time + dec_time
+            avg_total += total_frame_time
+            print(f"Frame {i:03d} Total Time: {total_frame_time:.2f} ms (Enc: {avg_enc_time:.2f} + Dec: {dec_time:.2f})")
+        
+        if len(dec_starts) > 0:
+            print(f"Average Total Time Per Frame: {avg_total/len(dec_starts):.2f} ms")
+        print("-----------------------------------------\n")
+
     result = to_cpu(res)
     return result, state_args
 

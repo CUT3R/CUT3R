@@ -7,6 +7,8 @@ from .blendedmvs import BlendedMVS_Multi  # noqa
 from .co3d import Co3d_Multi  # noqa
 from .cop3d import Cop3D_Multi
 from .dl3dv import DL3DV_Multi
+from .dna import DNAMultiSeqDataset as DNA_Multi
+from .dna import DNASingleSeqDataset as DNA_Single
 from .dynamic_replica import DynamicReplica
 from .eden import EDEN_Multi
 from .hypersim import HyperSim_Multi
