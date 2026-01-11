@@ -1,0 +1,219 @@
+model: ARCroco3DStereo(ARCroco3DStereoConfig(freeze='encoder', state_size=768, state_pe='2d',
+  pos_embed='RoPE100', rgb_head=True, pose_head=True, patch_embed_cls='ManyAR_PatchEmbed',
+  img_size=(512, 512), head_type='dpt', output_mode='pts3d+pose', depth_mode=('exp',
+  -inf, inf), conf_mode=('exp', 1, inf), pose_mode=('exp', -inf, inf), enc_embed_dim=1024,
+  enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12, dec_num_heads=12,
+  landscape_only=False))
+pretrained: checkpoints/train_third_stage/checkpoint-final.pth
+load_only_encoder: False
+long_context: True
+fixed_length: True
+resume: null
+benchmark: True
+num_views : 32
+num_test_views : 4
+n_corres_train: 0
+n_corres_test: 0
+
+train_criterion: ConfLoss(Regr3DPose(L21, norm_mode='?avg_dis'), alpha=0.2) + RGBLoss(MSE)
+test_criterion: Regr3DPose(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0)
+  + Regr3DPose_ScaleInv(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0)
+  + RGBLoss(L21)
+resolution:
+- (512
+- 384)
+- (512
+- 336)
+- (512
+- 288)
+- (512
+- 256)
+- (512
+- 208)
+- (512
+- 144)
+- (384
+- 512)
+- (336
+- 512)
+- (288
+- 512)
+- (256
+- 512)
+dataset1: Co3d_Multi(allow_repeat=False, split='train', ROOT='../../data/dust3r_data/processed_co3d/',
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset2: WildRGBD_Multi(allow_repeat=False, split='train', ROOT="../../data/dust3r_data/processed_wildrgbd",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset3: ARKitScenes_Multi(allow_repeat=False, split='train', ROOT='../../data/dust3r_data/processed_arkitscenes/',
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset4: ARKitScenesHighRes_Multi(allow_repeat=False, split='train', ROOT="../../data/dust3r_data/processed_arkitscenes_highres",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset5: ScanNetpp_Multi(allow_repeat=False, split='train', ROOT="../../data/dust3r_data/processed_scannetpp/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset6: ScanNet_Multi(allow_repeat=False, split='train', ROOT="../../data/dust3r_data/processed_scannet/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset7: HyperSim_Multi(allow_repeat=False, split='train', ROOT="../../data/custom_data/processed_hypersim",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset8: BlendedMVS_Multi(allow_repeat=False, split='train', ROOT="../../data/dust3r_data/processed_blendedmvs/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset9: MegaDepth_Multi(allow_repeat=False, split="train", ROOT="../../data/dust3r_data/processed_megadepth",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset10: MapFree_Multi(allow_repeat=False, split=None, ROOT="../../data/mast3r_data/processed_mapfree/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset11: Waymo_Multi(allow_repeat=False, split=None, ROOT="../../data/dust3r_data/processed_waymo/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset12: VirtualKITTI2_Multi(allow_repeat=False, split=None, ROOT="../../data/mast3r_data/processed_vkitti",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset13: UnReal4K_Multi(allow_repeat=False, split=None, ROOT="../../data/mast3r_data/processed_unreal4k/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset14: TartanAir_Multi(allow_repeat=False, split=None, ROOT="../../data/mast3r_data/processed_tartanair/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset15: DL3DV_Multi(allow_repeat=False, split='train', ROOT="../../data/custom_data/processed_dl3dv",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset16: Cop3D_Multi(allow_repeat=False, split='train', ROOT="../../data/custom_data/processed_cop3d/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset17: MVImgNet_Multi(allow_repeat=False, split='train', ROOT="../../data/custom_data/processed_mvimgnet/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset18: RE10K_Multi(allow_repeat=False, split=None, ROOT="../../data/custom_data/processed_re10k/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset19: OmniObject3D_Multi(allow_repeat=False, split=None, ROOT="../../data/custom_data/processed_omniobject3d/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset20: ThreeDKenBurns(allow_repeat=False, split=None, ROOT="../../data/custom_data/processed_3dkb/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset21: IRS(allow_repeat=False, split=None, ROOT="../../data/custom_data/processed_irs/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset22: SynScapes(allow_repeat=False, split=None, ROOT="../../data/custom_data/processed_synscapes/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset23: UrbanSyn(allow_repeat=False, split=None, ROOT="../../data/custom_data/processed_urbansyn/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset24: EDEN_Multi(allow_repeat=False, split='train', ROOT="../../data/custom_data/processed_eden",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset25: SmartPortraits_Multi(allow_repeat=False, split='train', ROOT="../../data/custom_data/processed_smartportraits",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset26: DynamicReplica(allow_repeat=False, split='train', ROOT="../../data/custom_data/processed_dynamic_replica/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset27: Spring(allow_repeat=False, split=None, ROOT="../../data/custom_data/processed_spring/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset28: BEDLAM_Multi(allow_repeat=False, split='train', ROOT="../../data/custom_data/processed_bedlam",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset29: MVS_Synth_Multi(allow_repeat=False, split='train', ROOT="../../data/custom_data/processed_mvs_synth",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset30: PointOdyssey_Multi(allow_repeat=False, split='train', ROOT="../../data/custom_data/processed_point_odyssey",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset31: UASOL_Multi(allow_repeat=False, split='train', ROOT="../../data/custom_data/processed_uasol",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset32: MP3D_Multi(allow_repeat=False, split=None, ROOT="../../data/custom_data/processed_mp3d/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+dataset33: HOI4D_Multi(allow_repeat=False, split=None, ROOT="../../data/custom_data/processed_hoi4d/",
+  aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 208),
+  (512, 144), (384, 512), (336, 512), (288, 512), (256, 512)], transform=SeqColorJitter,
+  num_views=${num_views}, n_corres=${n_corres_train})
+train_dataset: 22400 @ ${dataset1} + 28000 @ ${dataset2} + 28000 @ ${dataset3} + 2800
+  @ ${dataset4} + 2800 @ ${dataset5} + 70000 @ ${dataset6} + 2800 @ ${dataset7} +
+  11200 @ ${dataset8} + 8400 @ ${dataset9} + 28000 @ ${dataset10} + 21000 @ ${dataset11}
+  + 2800 @ ${dataset12} + 84 @ ${dataset13} + 42000 @ ${dataset14} + 42000 @ ${dataset15}
+  + 3600 @ ${dataset16} + 9600 @ ${dataset17} + 4800 @ ${dataset18} + 12000 @ ${dataset19}
+  + 16800 @ ${dataset26} + 1200 @ ${dataset27} + 4800 @ ${dataset28} + 2400 @ ${dataset29}
+  + 14400 @ ${dataset30} + 7200 @ ${dataset31} + 9600 @ ${dataset32}
+test_dataset: 1000 @ ARKitScenes_Multi(split='test', ROOT='../../data/dust3r_data/processed_arkitscenes/', resolution=224, num_views=4, seed=42, n_corres=0)
+
+seed: 0
+batch_size: 16
+accum_iter: 1
+gradient_checkpointing: true
+epochs: 10
+start_epoch: 0
+weight_decay: 0.05
+lr: 1.0e-06
+min_lr: 1.0e-07
+warmup_epochs: 0.5
+amp: 1
+
+num_workers: 8
+world_size: 1
+local-rank: -1
+dist_url: 'env://'
+rank: 0
+gpu: 0
+distributed: False
+dist_backend: 'nccl'
+
+eval_freq: 1
+save_freq: 1
+keep_freq: 10
+print_freq: 10
+print_img_freq: 500
+num_imgs_vis: 4
+save_dir: 'checkpoints'
+exp_name: 'train_final_stage'
+task: 'cut3r'
+logdir: ./${save_dir}/${exp_name}/logs
+output_dir: ./${save_dir}/${exp_name}/
+hydra:
+  verbose: True
+  run:
+    dir: ./${save_dir}/${exp_name}

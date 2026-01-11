@@ -1,0 +1,61 @@
+model: "ARCroco3DStereo(ARCroco3DStereoConfig(freeze='encoder', state_size=768, state_pe='2d', pos_embed='RoPE100', rgb_head=True, pose_head=True, patch_embed_cls='ManyAR_PatchEmbed', img_size=(512, 512), head_type='dpt', output_mode='pts3d+pose', depth_mode=('exp', -inf, inf), conf_mode=('exp', 1, inf), pose_mode=('exp', -inf, inf), enc_embed_dim=1024, enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12, dec_num_heads=12, landscape_only=False))"
+pretrained: checkpoints/cut3r_512_dpt_4_64.pth
+load_only_encoder: False
+long_context: True
+fixed_length: False
+resume: null
+benchmark: False
+num_views : 8
+num_test_views : 8
+n_corres_train: 0
+n_corres_test: 0
+
+train_criterion: ConfLoss(Regr3DPoseBatchList(L21, norm_mode='?avg_dis'), alpha=0.2) + RGBLoss(MSE)
+test_criterion: Regr3DPose(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0) + Regr3DPose_ScaleInv(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0) + RGBLoss(L21)
+
+# Portrait resolution for Human Data
+resolution: [[384, 512]]
+
+allow_repeat: True
+# Assuming user will mount/link data to data/DNA. Adjust ROOT/dataset_location as needed.
+dataset_dna: DNA_Multi(dataset_location='/home/ren/lin/nas-train/Concat_Dataset/DNA', sequence_list=None, S=${num_views}, resolution=${resolution}, stride=1, transform=SeqColorJitter)
+
+train_dataset: 1000 @ ${dataset_dna}
+test_dataset: 10 @ DNA_Multi(dataset_location='/home/ren/lin/nas-train/Concat_Dataset/DNA', sequence_list=None, S=${num_test_views}, resolution=${resolution}, stride=1)
+
+seed: 0
+batch_size: 4
+accum_iter: 4
+gradient_checkpointing: True
+epochs: 10
+start_epoch: 0
+weight_decay: 0.05
+lr: 1e-6
+min_lr: 1e-7
+warmup_epochs: 0.5
+amp: 1
+
+num_workers: 8
+world_size: 1
+local-rank: -1
+dist_url: 'env://'
+rank: 0
+gpu: 0
+distributed: False
+dist_backend: 'nccl'
+
+eval_freq: 1
+save_freq: 1
+keep_freq: 5
+print_freq: 10
+print_img_freq: 500
+num_imgs_vis: 4
+save_dir: 'checkpoints'
+exp_name: 'finetune_dna_human'
+task: 'cut3r'
+logdir: ./${save_dir}/${exp_name}/logs
+output_dir: ./${save_dir}/${exp_name}/
+hydra:
+  verbose: True
+  run:
+    dir: ./${save_dir}/${exp_name}

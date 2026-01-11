@@ -14,12 +14,11 @@ train_criterion: ConfLoss(Regr3DPoseBatchList(L21, norm_mode='?avg_dis'), alpha=
 test_criterion: Regr3DPose(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0) + Regr3DPose_ScaleInv(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0) + RGBLoss(L21)
 
 # Portrait resolution for Human Data
-resolution: [(384, 512)]
+resolution: [[384, 512]]
 
 allow_repeat: True
 # Assuming user will mount/link data to data/DNA. Adjust ROOT/dataset_location as needed.
 dataset_dna: DNA_Multi(dataset_location='/home/ren/lin/nas-train/Concat_Dataset/DNA', sequence_list=None, S=${num_views}, resolution=${resolution}, stride=1, transform=SeqColorJitter)
-
 train_dataset: 1000 @ ${dataset_dna}
 test_dataset: 10 @ DNA_Multi(dataset_location='/home/ren/lin/nas-train/Concat_Dataset/DNA', sequence_list=None, S=${num_test_views}, resolution=${resolution}, stride=1)
 
@@ -35,7 +34,7 @@ min_lr: 1e-7
 warmup_epochs: 0.5
 amp: 1
 
-num_workers: 8
+num_workers: 4
 world_size: 1
 local-rank: -1
 dist_url: 'env://'

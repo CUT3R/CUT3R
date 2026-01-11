@@ -1,0 +1,132 @@
+model: ARCroco3DStereo(ARCroco3DStereoConfig(state_size=768, state_pe='2d', pos_embed='RoPE100',
+  rgb_head=True, pose_head=True,  img_size=(224, 224), head_type='linear', output_mode='pts3d+pose',
+  depth_mode=('exp', -inf, inf), conf_mode=('exp', 1, inf), pose_mode=('exp', -inf,
+  inf), enc_embed_dim=1024, enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12,
+  dec_num_heads=12))
+pretrained: checkpoints/train_first_stage/checkpoint-final.pth
+load_only_encoder: False
+long_context: False
+fixed_length: True
+resume: null
+benchmark: True
+num_views : 4
+num_test_views : 4
+n_corres_train: 0
+n_corres_test: 0
+
+
+train_criterion: ConfLoss(Regr3DPoseBatchList(L21, norm_mode='?avg_dis'), alpha=0.2) + RGBLoss(MSE)
+test_criterion: Regr3DPose(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0) + Regr3DPose_ScaleInv(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0) + RGBLoss(L21)
+
+
+dataset1: Co3d_Multi(split='train', ROOT='../../data/dust3r_data/processed_co3d/',
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset2: WildRGBD_Multi(split='train', ROOT="../../data/dust3r_data/processed_wildrgbd",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset3: ARKitScenes_Multi(split='train', ROOT='../../data/dust3r_data/processed_arkitscenes/',
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset4: ARKitScenesHighRes_Multi(split='train', ROOT="../../data/dust3r_data/processed_arkitscenes_highres",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset5: ScanNetpp_Multi(split='train', ROOT="../../data/dust3r_data/processed_scannetpp/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset6: ScanNet_Multi(split='train', ROOT="../../data/dust3r_data/processed_scannet/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset7: HyperSim_Multi(split='train', ROOT="../../data/custom_data/processed_hypersim",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset8: BlendedMVS_Multi(split='train', ROOT="../../data/dust3r_data/processed_blendedmvs/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset9: MegaDepth_Multi(split="train", ROOT="../../data/dust3r_data/processed_megadepth",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset10: MapFree_Multi(split=None, ROOT="../../data/mast3r_data/processed_mapfree/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset11: Waymo_Multi(split=None, ROOT="../../data/dust3r_data/processed_waymo/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset12: VirtualKITTI2_Multi(split=None, ROOT="../../data/mast3r_data/processed_vkitti",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset13: UnReal4K_Multi(split=None, ROOT="../../data/mast3r_data/processed_unreal4k/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset14: TartanAir_Multi(split=None, ROOT="../../data/mast3r_data/processed_tartanair/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset15: DL3DV_Multi(split='train', ROOT="../../data/custom_data/processed_dl3dv",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset16: Cop3D_Multi(split='train', ROOT="../../data/custom_data/processed_cop3d/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset17: MVImgNet_Multi(split='train', ROOT="../../data/custom_data/processed_mvimgnet/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset18: RE10K_Multi(split=None, ROOT="../../data/custom_data/processed_re10k/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset19: OmniObject3D_Multi(split=None, ROOT="../../data/custom_data/processed_omniobject3d/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset20: ThreeDKenBurns(split=None, ROOT="../../data/custom_data/processed_3dkb/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset21: IRS(split=None, ROOT="../../data/custom_data/processed_irs/", aug_crop=16,
+  resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset22: SynScapes(split=None, ROOT="../../data/custom_data/processed_synscapes/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset23: UrbanSyn(split=None, ROOT="../../data/custom_data/processed_urbansyn/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset24: EDEN_Multi(split='train', ROOT="../../data/custom_data/processed_eden",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset25: SmartPortraits_Multi(split='train', ROOT="../../data/custom_data/processed_smartportraits",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset26: DynamicReplica(split='train', ROOT="../../data/custom_data/processed_dynamic_replica/",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset27: Spring(split=None, ROOT="../../data/custom_data/processed_spring/", aug_crop=16,
+  resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset28: BEDLAM_Multi(split='train', ROOT="../../data/custom_data/processed_bedlam",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset29: MVS_Synth_Multi(split='train', ROOT="../../data/custom_data/processed_mvs_synth",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset30: PointOdyssey_Multi(split='train', ROOT="../../data/custom_data/processed_point_odyssey",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset31: UASOL_Multi(split='train', ROOT="../../data/custom_data/processed_uasol",
+  aug_crop=16, resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+dataset32: MP3D_Multi(split=None, ROOT="../../data/custom_data/processed_mp3d/", aug_crop=16,
+  resolution=224, transform=SeqColorJitter, num_views=${num_views}, n_corres=${n_corres_train})
+train_dataset: 48000 @ ${dataset1} + 60000 @ ${dataset2} + 54000 @ ${dataset3} + 18000
+  @ ${dataset4} + 6000 @ ${dataset5} + 42000 @ ${dataset6} + 12000 @ ${dataset7} +
+  6000 @ ${dataset8} + 6000 @ ${dataset9} + 60000 @ ${dataset10} + 48000 @ ${dataset11}
+  + 2400 @ ${dataset12} + 180 @ ${dataset13} + 18000 @ ${dataset14} + 222000 @ ${dataset15}
+  + 400 @ ${dataset16} + 16000 @ ${dataset17} + 4000 @ ${dataset18} + 32000 @ ${dataset19}
+  + 4000 @ ${dataset20} + 2000 @ ${dataset21} + 2000 @ ${dataset22} + 500 @ ${dataset23}
+  + 12000 @ ${dataset24} + 16000 @ ${dataset25} + 20000 @ ${dataset26} + 400 @ ${dataset27}
+  + 32000 @ ${dataset28} + 2000 @ ${dataset29} + 20000 @ ${dataset30} + 12000 @ ${dataset31}
+  + 24000 @ ${dataset32}
+test_dataset: 1000 @ ARKitScenes_Multi(split='test', ROOT='../../data/dust3r_data/processed_arkitscenes/', resolution=224, num_views=4, seed=42, n_corres=0)
+
+seed: 0
+batch_size: 16
+accum_iter: 1
+gradient_checkpointing: false
+epochs: 35
+start_epoch: 0
+weight_decay: 0.05
+lr: 5.0e-06
+min_lr: 1.0e-06
+warmup_epochs: 1
+amp: 1
+
+num_workers: 8
+world_size: 1
+local-rank: -1
+dist_url: 'env://'
+rank: 0
+gpu: 0
+distributed: False
+dist_backend: 'nccl'
+
+eval_freq: 1
+save_freq: 1
+keep_freq: 10
+print_freq: 10
+print_img_freq: 500
+num_imgs_vis: 4
+save_dir: 'checkpoints'
+exp_name: 'train_second_stage'
+task: 'cut3r'
+logdir: ./${save_dir}/${exp_name}/logs
+output_dir: ./${save_dir}/${exp_name}/
+hydra:
+  verbose: True
+  run:
+    dir: ./${save_dir}/${exp_name}
