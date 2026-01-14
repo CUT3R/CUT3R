@@ -146,7 +146,7 @@ class DNAMultiSeqDataset(BaseMultiViewDataset):
     def __len__(self):
         return len(self.samples)
 
-    def _crop_resize_dna_specific(self, img, depthmap, K, resolution, rng=None):
+    def _crop_resize_dna_specific(self, img, depthmap, K, resolution, rng=None, fg_mask=None):
         """
         Custom crop/resize because DNA images are 1024x1224 (0.83 AR) 
         and we want 384x512 (0.75 AR) or similar Portrait AR.
@@ -167,12 +167,14 @@ class DNAMultiSeqDataset(BaseMultiViewDataset):
             left = (W_orig - new_w) // 2
             img = img.crop((left, 0, left + new_w, H_orig))
             if depthmap is not None: depthmap = depthmap[:, left:left+new_w]
+            if fg_mask is not None: fg_mask = fg_mask[:, left:left+new_w]
             K[0, 2] -= left
         elif orig_ar < target_ar: # Too tall
             new_h = int(W_orig / target_ar)
             top = (H_orig - new_h) // 2
             img = img.crop((0, top, W_orig, top + new_h))
             if depthmap is not None: depthmap = depthmap[top:top+new_h, :]
+            if fg_mask is not None: fg_mask = fg_mask[top:top+new_h, :]
             K[1, 2] -= top
             
         # 2. Resize
@@ -182,6 +184,8 @@ class DNAMultiSeqDataset(BaseMultiViewDataset):
         img = img.resize((W_target, H_target), PIL.Image.LANCZOS)
         if depthmap is not None:
             depthmap = cv2.resize(depthmap, (W_target, H_target), interpolation=cv2.INTER_NEAREST)
+        if fg_mask is not None:
+            fg_mask = cv2.resize(fg_mask, (W_target, H_target), interpolation=cv2.INTER_NEAREST)
         K[0, :] *= scale_x
         K[1, :] *= scale_y
         
@@ -194,12 +198,14 @@ class DNAMultiSeqDataset(BaseMultiViewDataset):
                  y0 = rng.integers(0, H_target - crop_h)
                  img = img.crop((x0, y0, x0+crop_w, y0+crop_h))
                  if depthmap is not None: depthmap = depthmap[y0:y0+crop_h, x0:x0+crop_w]
+                 if fg_mask is not None: fg_mask = fg_mask[y0:y0+crop_h, x0:x0+crop_w]
                  K[0,2] -= x0; K[1,2] -= y0
                  img = img.resize((W_target, H_target), PIL.Image.LANCZOS)
                  if depthmap is not None: depthmap = cv2.resize(depthmap, (W_target, H_target), interpolation=cv2.INTER_NEAREST)
+                 if fg_mask is not None: fg_mask = cv2.resize(fg_mask, (W_target, H_target), interpolation=cv2.INTER_NEAREST)
                  K[0,:] *= zoom; K[1,:] *= zoom
                  
-        return img, depthmap, K
+        return img, depthmap, fg_mask, K
 
     def _get_views(self, idx, resolution, rng, num_views):
         # BaseMultiViewDataset signature
@@ -287,14 +293,26 @@ class DNAMultiSeqDataset(BaseMultiViewDataset):
                  # Should probably invalidate or skip? For now zero.
                  depthmap = np.zeros(img.shape[:2], dtype=np.float32)
             
+            # Foreground Mask (human segmentation)
+            mask_dir = os.path.join(frame_dir, 'masks')
+            mask_path = os.path.join(mask_dir, f"{int(vid_str):04d}.png")
+            if os.path.exists(mask_path):
+                fg_mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+                if fg_mask is not None:
+                    fg_mask = (fg_mask > 127).astype(np.float32)  # Binary mask
+                else:
+                    fg_mask = np.ones(img.shape[:2], dtype=np.float32)
+            else:
+                fg_mask = np.ones(img.shape[:2], dtype=np.float32)  # Fallback: all pixels
+            
             # Intrinsics
             K = intrinsics_dict.get(vid, np.eye(3, dtype=np.float32))
             
             # Metadata
             c2w = extrinsics_dict.get(vid, np.eye(4, dtype=np.float32))
             
-            # Transform
-            img_pil, depthmap, K = self._crop_resize_dna_specific(img, depthmap, K.copy(), resolution, rng)
+            # Transform (also transforms fg_mask)
+            img_pil, depthmap, fg_mask, K = self._crop_resize_dna_specific(img, depthmap, K.copy(), resolution, rng, fg_mask=fg_mask)
             img_np = np.array(img_pil) # RGB
             
             # Masks - get_img_and_ray_masks returns scalar booleans, not arrays
@@ -308,6 +326,7 @@ class DNAMultiSeqDataset(BaseMultiViewDataset):
             views.append(dict(
                 img=img_pil,  # PIL Image, not numpy array - base class expects .size attribute
                 depthmap=depthmap,
+                fg_mask=fg_mask,  # NEW: foreground mask (H, W) float [0, 1]
                 camera_pose=c2w,
                 camera_intrinsics=K,
                 dataset=self.dataset_label,

@@ -19,14 +19,14 @@ resolution: [[384, 512]]
 allow_repeat: True
 # Assuming user will mount/link data to data/DNA. Adjust ROOT/dataset_location as needed.
 dataset_dna: DNA_Multi(dataset_location='/mnt/raid/lin/nas-train/Concat_Dataset/DNA', sequence_list=None, S=${num_views}, resolution=${resolution}, stride=1, transform=SeqColorJitter)
-train_dataset: 10000 @ ${dataset_dna}
-test_dataset: 10 @ DNA_Multi(dataset_location='/mnt/raid/lin/nas-train/Concat_Dataset/DNA', sequence_list=None, S=${num_test_views}, resolution=${resolution}, stride=1, transform=ImgNorm)
+train_dataset: 20000 @ ${dataset_dna}
+test_dataset: 20 @ DNA_Multi(dataset_location='/mnt/raid/lin/nas-train/Concat_Dataset/DNA', sequence_list=None, S=${num_test_views}, resolution=${resolution}, stride=1, transform=ImgNorm)
 
 seed: 0
-batch_size: 4
+batch_size: 6
 accum_iter: 4
 gradient_checkpointing: True
-epochs: 10
+epochs: 20
 start_epoch: 0
 weight_decay: 0.05
 lr: 1e-6
@@ -39,7 +39,7 @@ world_size: 1
 local-rank: -1
 dist_url: 'env://'
 rank: 0
-gpu: 0
+gpu: 0[]
 distributed: False
 dist_backend: 'nccl'
 
@@ -50,7 +50,7 @@ print_freq: 10
 print_img_freq: 500
 num_imgs_vis: 4
 save_dir: 'checkpoints'
-exp_name: '2026_113_finetune_dna_human'
+exp_name: '2026_114_finetune_dna_human_setup(NoAugmentation_FrontalSupervision)'
 task: 'cut3r'
 logdir: ./${save_dir}/${exp_name}/logs
 output_dir: ./${save_dir}/${exp_name}/

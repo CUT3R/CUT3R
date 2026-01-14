@@ -919,6 +919,17 @@ class Regr3DPoseBatchList(Regr3DPose):
         depth_only = gts[0]["depth_only"]
         single_view = gts[0]["single_view"]
         is_metric = gts[0]["is_metric"]
+        
+        # Foreground mask: only supervise foreground pixels if available
+        fg_masks = []
+        for i in range(len(gts)):
+            if "fg_mask" in gts[i] and gts[i]["fg_mask"] is not None:
+                fg_masks.append(gts[i]["fg_mask"] > 0.5)  # (B, H, W) boolean
+            else:
+                fg_masks.append(torch.ones_like(masks[i]))  # Fallback: all pixels
+        
+        # Combine fg_mask with validity mask
+        masks = [mask & fg for mask, fg in zip(masks, fg_masks)]
 
         # self view loss and details
         if "Quantile" in self.criterion.__class__.__name__:
