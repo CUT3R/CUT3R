@@ -196,7 +196,7 @@ def train(args):
 
     if args.pretrained and not args.resume:
         printer.info(f"Loading pretrained: {args.pretrained}")
-        ckpt = torch.load(args.pretrained, map_location=device)
+        ckpt = torch.load(args.pretrained, map_location=device, weights_only=False)
         load_only_encoder = getattr(args, "load_only_encoder", False)
         if load_only_encoder:
             filtered_state_dict = {
@@ -765,6 +765,16 @@ def vis_and_cat(
 
 
 def get_vis_imgs_new(loss_details, num_imgs_vis, num_views, is_metric):
+    # Determine actual batch size from available data
+    actual_bs = 0
+    if "gt_img1" in loss_details:
+        actual_bs = loss_details["gt_img1"].shape[0]
+    elif "gt_img_view1" in loss_details: # Fallback for different naming
+        actual_bs = loss_details["gt_img_view1"].shape[0]
+    
+    if actual_bs > 0:
+        num_imgs_vis = min(num_imgs_vis, actual_bs)
+
     ret_dict = {}
     gt_img_list = [[] for _ in range(num_imgs_vis)]
     pred_img_list = [[] for _ in range(num_imgs_vis)]

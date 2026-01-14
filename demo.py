@@ -274,11 +274,11 @@ def prepare_output(outputs, outdir, revisit=1, use_pose=True):
     os.makedirs(os.path.join(outdir, "color"), exist_ok=True)
     os.makedirs(os.path.join(outdir, "camera"), exist_ok=True)
     for f_id in range(len(pts3ds_self)):
-        depth = depths_tosave[f_id].cpu().numpy()
-        conf = conf_self_tosave[f_id].cpu().numpy()
-        color = colors_tosave[f_id].cpu().numpy()
-        c2w = cam2world_tosave[f_id].cpu().numpy()
-        intrins = intrinsics_tosave[f_id].cpu().numpy()
+        depth = depths_tosave[f_id].cpu().float().numpy()
+        conf = conf_self_tosave[f_id].cpu().float().numpy()
+        color = colors_tosave[f_id].cpu().float().numpy()
+        c2w = cam2world_tosave[f_id].cpu().float().numpy()
+        intrins = intrinsics_tosave[f_id].cpu().float().numpy()
         np.save(os.path.join(outdir, "depth", f"{f_id:06d}.npy"), depth)
         np.save(os.path.join(outdir, "conf", f"{f_id:06d}.npy"), conf)
         iio.imwrite(
@@ -390,8 +390,8 @@ def run_inference(args):
     )
 
     # Convert tensors to numpy arrays for visualization.
-    pts3ds_to_vis = [p.cpu().numpy() for p in pts3ds_other]
-    colors_to_vis = [c.cpu().numpy() for c in colors]
+    pts3ds_to_vis = [p.cpu().float().numpy() for p in pts3ds_other]
+    colors_to_vis = [c.cpu().float().numpy() for c in colors]
     edge_colors = [None] * len(pts3ds_to_vis)
 
     # Create and run the point cloud viewer.

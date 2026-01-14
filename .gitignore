@@ -56,3 +56,6 @@ src/checkpoints
 examples/dna_examples/
 examples/real_sample/
 output/
+checkpoints/
+output_comparison/
+output_sample

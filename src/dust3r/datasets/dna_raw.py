@@ -26,8 +26,6 @@ class DNAMultiSeqDataset(BaseMultiViewDataset):
                  exclude_seqs=None,
                  view_sample_mode='random',
                  load_moge=True,
-                 specific_view_ids=None,
-                 use_zoom_aug=False,  # Disabled: causes depth blur
                  *args, **kwargs):
                  
         self.dataset_location = dataset_location
@@ -42,8 +40,6 @@ class DNAMultiSeqDataset(BaseMultiViewDataset):
         self.stride = stride
         self.exclude_seqs = set(exclude_seqs or [])
         self.view_sample_mode = view_sample_mode
-        self.specific_view_ids = specific_view_ids
-        self.use_zoom_aug = use_zoom_aug
         self.dataset_label = "DNA"
         self.is_metric = True # DNA depth is in meters
         
@@ -186,7 +182,7 @@ class DNAMultiSeqDataset(BaseMultiViewDataset):
         K[1, :] *= scale_y
         
         # 3. Zoom Augmentation (Optional)
-        if self.use_zoom_aug and rng is not None and rng.random() < 0.5:
+        if rng is not None and rng.random() < 0.5:
              zoom = rng.uniform(1.0, 1.2)
              if zoom > 1.0:
                  crop_w, crop_h = int(W_target/zoom), int(H_target/zoom)
@@ -222,26 +218,6 @@ class DNAMultiSeqDataset(BaseMultiViewDataset):
         
         if num_available <= num_views:
             selected_indices = np.arange(num_available)
-        elif self.specific_view_ids is not None:
-             # Find indices corresponding to requested view IDs
-             selected_indices = []
-             # Create a mapping from vid to index
-             vid_to_idx = {}
-             for i, path in enumerate(all_views):
-                 vid = int(os.path.splitext(os.path.basename(path))[0])
-                 vid_to_idx[vid] = i
-             
-             for req_vid in self.specific_view_ids:
-                 if req_vid in vid_to_idx:
-                     selected_indices.append(vid_to_idx[req_vid])
-                 else:
-                     print(f"Warning: Requested view {req_vid} not found in {seq_name}/{frame_name}")
-             
-             selected_indices = np.array(selected_indices)
-             # If we didn't find enough, maybe fill with random? Or just return what we found.
-             if len(selected_indices) == 0:
-                 return self._get_views(rng.integers(len(self.samples)), resolution, rng, num_views)
-
         elif self.view_sample_mode == 'random':
              selected_indices = np.sort(rng.choice(num_available, num_views, replace=False))
         else:
@@ -301,9 +277,18 @@ class DNAMultiSeqDataset(BaseMultiViewDataset):
             img_mask, ray_mask = self.get_img_and_ray_masks(self.is_metric, i, rng)
 
             # Refine validity based on depth > 0 if metric
-            # valid_depth = depthmap > 0
-            # img_mask = img_mask & valid_depth
-            # ray_mask = ray_mask & valid_depth
+            valid_depth = depthmap > 0
+            # NOTE: img_mask is view-level validity (scalar). ray_mask is pixel-level (can be broadcasted).
+            # We must NOT make img_mask pixel-wise, otherwise collation fails in model.
+            img_mask = img_mask & valid_depth
+            # ray_mask = ray_mask & valid_depth  <-- THIS WAS THE BUG. Don't make img_mask spatial.
+
+            # Refine validity based on depth > 0 if metric
+            valid_depth = depthmap > 0
+            # NOTE: img_mask is view-level validity (scalar). ray_mask is pixel-level (can be broadcasted).
+            # We must NOT make img_mask pixel-wise, otherwise collation fails in model.
+            img_mask = img_mask & valid_depth
+            # ray_mask = ray_mask & valid_depth  <-- THIS WAS THE BUG. Don't make img_mask spatial.
             
             views.append(dict(
                 img=img_pil,  # PIL Image, not numpy array - base class expects .size attribute

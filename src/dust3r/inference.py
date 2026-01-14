@@ -70,7 +70,17 @@ def loss_of_one_batch(
     if symmetrize_batch:
         batch = make_batch_symmetric(batch)
 
-    with torch.cuda.amp.autocast(enabled=not inference):
+    # Generic fix: ensure input images match model dtype
+    target_dtype = torch.bfloat16
+    device = accelerator.device
+    for view in batch:
+        for k, v in view.items():
+            if isinstance(v, torch.Tensor):
+                dtype = target_dtype if k in ["img", "ray_map"] else None
+                view[k] = v.to(device=device, dtype=dtype)
+
+
+    with torch.autocast("cuda", dtype=torch.bfloat16):
         if inference:
             output, state_args = model(batch, ret_state=True)
             preds, batch = output.ress, output.views
@@ -108,10 +118,19 @@ def loss_of_one_batch_tbptt(
         ), "cannot symmetrize batch with more than 2 views"
     if symmetrize_batch:
         batch = make_batch_symmetric(batch)
+    # Generic fix: ensure input images match model dtype
+    target_dtype = torch.bfloat16
+    device = accelerator.device
+    for view in batch:
+        for k, v in view.items():
+            if isinstance(v, torch.Tensor):
+                dtype = target_dtype if k in ["img", "ray_map"] else None
+                view[k] = v.to(device=device, dtype=dtype)
+
     all_preds = []
     all_loss = 0.0
     all_loss_details = {}
-    with torch.cuda.amp.autocast(enabled=not inference):
+    with torch.autocast("cuda", dtype=torch.bfloat16):
         with torch.no_grad():
             (feat, pos, shape), (
                 init_state_feat,
@@ -217,7 +236,7 @@ def loss_of_one_batch_tbptt(
 
 
 @torch.no_grad()
-def inference(groups, model, device, verbose=True, profile=False):
+def inference(groups, model, device, verbose=True, profile=False, accelerator=None):
     ignore_keys = set(
         ["depthmap", "dataset", "label", "instance", "idx", "true_shape", "rng"]
     )
@@ -266,8 +285,18 @@ def inference(groups, model, device, verbose=True, profile=False):
         handle1_dec = model.decoder_embed.register_forward_pre_hook(start_hook)
         handle2_dec = model.downstream_head.register_forward_hook(end_hook)
 
+        handle2_dec = model.downstream_head.register_forward_hook(end_hook)
+
     try:
-        res, state_args = loss_of_one_batch(groups, model, None, None, inference=True)
+        # Mock accelerator if None
+        accelerator = accelerator
+        if accelerator is None:
+            class MockAccelerator:
+                def __init__(self, dev):
+                    self.device = dev
+            accelerator = MockAccelerator(device)
+            
+        res, state_args = loss_of_one_batch(groups, model, None, accelerator, inference=True)
     finally:
         if profile:
             handle1_enc.remove()

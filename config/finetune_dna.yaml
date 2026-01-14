@@ -18,9 +18,9 @@ resolution: [[384, 512]]
 
 allow_repeat: True
 # Assuming user will mount/link data to data/DNA. Adjust ROOT/dataset_location as needed.
-dataset_dna: DNA_Multi(dataset_location='/home/ren/lin/nas-train/Concat_Dataset/DNA', sequence_list=None, S=${num_views}, resolution=${resolution}, stride=1, transform=SeqColorJitter)
-train_dataset: 1000 @ ${dataset_dna}
-test_dataset: 10 @ DNA_Multi(dataset_location='/home/ren/lin/nas-train/Concat_Dataset/DNA', sequence_list=None, S=${num_test_views}, resolution=${resolution}, stride=1)
+dataset_dna: DNA_Multi(dataset_location='/mnt/raid/lin/nas-train/Concat_Dataset/DNA', sequence_list=None, S=${num_views}, resolution=${resolution}, stride=1, transform=SeqColorJitter)
+train_dataset: 10000 @ ${dataset_dna}
+test_dataset: 10 @ DNA_Multi(dataset_location='/mnt/raid/lin/nas-train/Concat_Dataset/DNA', sequence_list=None, S=${num_test_views}, resolution=${resolution}, stride=1, transform=ImgNorm)
 
 seed: 0
 batch_size: 4
@@ -50,7 +50,7 @@ print_freq: 10
 print_img_freq: 500
 num_imgs_vis: 4
 save_dir: 'checkpoints'
-exp_name: 'finetune_dna_human'
+exp_name: '2026_113_finetune_dna_human'
 task: 'cut3r'
 logdir: ./${save_dir}/${exp_name}/logs
 output_dir: ./${save_dir}/${exp_name}/

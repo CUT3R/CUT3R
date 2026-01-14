@@ -1,6 +1,6 @@
 numpy==1.26.4
-torch
-torchvision
+# torch
+# torchvision
 roma
 gradio
 matplotlib
