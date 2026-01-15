@@ -29,6 +29,7 @@ from dust3r.model import (
     ARCroco3DStereoConfig,
     inf,
     strip_module,
+    load_model,
 )  # noqa: F401, needed when loading the model
 from dust3r.datasets import get_data_loader
 from dust3r.losses import *  # noqa: F401, needed when loading the model
@@ -189,6 +190,14 @@ def train(args):
 
     model.to(device)
 
+    teacher_model = None
+    teacher_ckpt = getattr(args, "teacher_ckpt", None)
+    distill_bg_weight = float(getattr(args, "distill_bg_weight", 0.0) or 0.0)
+    if teacher_ckpt:
+        teacher_model = load_model(teacher_ckpt, device=device, verbose=True)
+        teacher_model.eval()
+        teacher_model.requires_grad_(False)
+
     if args.gradient_checkpointing:
         model.gradient_checkpointing_enable()
     if args.long_context:
@@ -324,6 +333,8 @@ def train(args):
             loss_scaler,
             log_writer=log_writer,
             args=args,
+            teacher_model=teacher_model,
+            distill_bg_weight=distill_bg_weight,
         )
 
     total_time = time.time() - start_time
@@ -377,6 +388,8 @@ def train_one_epoch(
     loss_scaler,
     args,
     log_writer=None,
+    teacher_model=None,
+    distill_bg_weight=0.0,
 ):
     assert torch.backends.cuda.matmul.allow_tf32 == True
 
@@ -429,6 +442,8 @@ def train_one_epoch(
                     accelerator,
                     symmetrize_batch=False,
                     use_amp=bool(args.amp),
+                    teacher_model=teacher_model,
+                    distill_bg_weight=distill_bg_weight,
                 )
             else:
                 result = loss_of_one_batch_tbptt(
@@ -441,6 +456,8 @@ def train_one_epoch(
                     accelerator=accelerator,
                     symmetrize_batch=False,
                     use_amp=bool(args.amp),
+                    teacher_model=teacher_model,
+                    distill_bg_weight=distill_bg_weight,
                 )
             loss, loss_details = result["loss"]  # criterion returns two values
 

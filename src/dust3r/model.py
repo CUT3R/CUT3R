@@ -892,7 +892,8 @@ class ARCroco3DStereo(CroCoNet):
             )
             end_event.record()
             torch.cuda.synchronize()
-            print(f"Refined Frame {i} inference time: {start_event.elapsed_time(end_event):.2f} ms")
+            # Uncomment for profiling inference latency per frame.
+            # print(f"Refined Frame {i} inference time: {start_event.elapsed_time(end_event):.2f} ms")
         if ret_state:
             return ress, views, all_state_args
         return ress, views

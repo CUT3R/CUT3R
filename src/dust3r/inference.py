@@ -62,6 +62,8 @@ def loss_of_one_batch(
     ret=None,
     img_mask=None,
     inference=False,
+    teacher_model=None,
+    distill_bg_weight=0.0,
 ):
     if len(batch) > 2:
         assert (
@@ -93,6 +95,40 @@ def loss_of_one_batch(
         with torch.cuda.amp.autocast(enabled=False):
             loss = criterion(batch, preds) if criterion is not None else None
 
+            if (
+                teacher_model is not None
+                and distill_bg_weight > 0.0
+                and loss is not None
+            ):
+                with torch.no_grad():
+                    teacher_out = teacher_model(batch)
+                    teacher_preds = teacher_out.ress
+
+                bg_losses = []
+                for i, view in enumerate(batch):
+                    fg_mask = view.get("fg_mask", None)
+                    if fg_mask is None:
+                        continue
+                    fg_mask = fg_mask > 0.5
+                    bg_mask = ~fg_mask
+                    valid_mask = view.get("valid_mask", None)
+                    if valid_mask is not None:
+                        bg_mask = bg_mask & valid_mask
+                    if not bg_mask.any():
+                        continue
+                    student_pts = preds[i]["pts3d_in_self_view"]
+                    teacher_pts = teacher_preds[i]["pts3d_in_self_view"]
+                    bg_losses.append(
+                        (student_pts[bg_mask] - teacher_pts[bg_mask]).abs().mean()
+                    )
+
+                if bg_losses:
+                    bg_loss = torch.stack(bg_losses).mean()
+                    loss_value, loss_details = loss
+                    loss_details = dict(loss_details)
+                    loss_details["bg_distill"] = float(bg_loss)
+                    loss = (loss_value + distill_bg_weight * bg_loss, loss_details)
+
     result = dict(views=batch, pred=preds, loss=loss)
     return result[ret] if ret else result
 
@@ -111,6 +147,8 @@ def loss_of_one_batch_tbptt(
     ret=None,
     img_mask=None,
     inference=False,
+    teacher_model=None,
+    distill_bg_weight=0.0,
 ):
     if len(batch) > 2:
         assert (
@@ -180,6 +218,42 @@ def loss_of_one_batch_tbptt(
                         if criterion is not None
                         else None
                     )
+                    if (
+                        teacher_model is not None
+                        and distill_bg_weight > 0.0
+                        and loss is not None
+                    ):
+                        with torch.no_grad():
+                            teacher_out = teacher_model(chunk)
+                            teacher_preds = teacher_out.ress
+                        bg_losses = []
+                        for i, view in enumerate(chunk):
+                            fg_mask = view.get("fg_mask", None)
+                            if fg_mask is None:
+                                continue
+                            fg_mask = fg_mask > 0.5
+                            bg_mask = ~fg_mask
+                            valid_mask = view.get("valid_mask", None)
+                            if valid_mask is not None:
+                                bg_mask = bg_mask & valid_mask
+                            if not bg_mask.any():
+                                continue
+                            student_pts = preds[i]["pts3d_in_self_view"]
+                            teacher_pts = teacher_preds[i]["pts3d_in_self_view"]
+                            bg_losses.append(
+                                (student_pts[bg_mask] - teacher_pts[bg_mask])
+                                .abs()
+                                .mean()
+                            )
+                        if bg_losses:
+                            bg_loss = torch.stack(bg_losses).mean()
+                            loss_value, loss_details = loss
+                            loss_details = dict(loss_details)
+                            loss_details["bg_distill"] = float(bg_loss)
+                            loss = (
+                                loss_value + distill_bg_weight * bg_loss,
+                                loss_details,
+                            )
                     all_loss += float(loss)
                     all_loss_details = merge_chunk_dict(
                         all_loss_details, loss_details, chunk_id * chunk_size
@@ -213,6 +287,42 @@ def loss_of_one_batch_tbptt(
                         if criterion is not None
                         else None
                     )
+                    if (
+                        teacher_model is not None
+                        and distill_bg_weight > 0.0
+                        and loss is not None
+                    ):
+                        with torch.no_grad():
+                            teacher_out = teacher_model(chunk)
+                            teacher_preds = teacher_out.ress
+                        bg_losses = []
+                        for i, view in enumerate(chunk):
+                            fg_mask = view.get("fg_mask", None)
+                            if fg_mask is None:
+                                continue
+                            fg_mask = fg_mask > 0.5
+                            bg_mask = ~fg_mask
+                            valid_mask = view.get("valid_mask", None)
+                            if valid_mask is not None:
+                                bg_mask = bg_mask & valid_mask
+                            if not bg_mask.any():
+                                continue
+                            student_pts = preds[i]["pts3d_in_self_view"]
+                            teacher_pts = teacher_preds[i]["pts3d_in_self_view"]
+                            bg_losses.append(
+                                (student_pts[bg_mask] - teacher_pts[bg_mask])
+                                .abs()
+                                .mean()
+                            )
+                        if bg_losses:
+                            bg_loss = torch.stack(bg_losses).mean()
+                            loss_value, loss_details = loss
+                            loss_details = dict(loss_details)
+                            loss_details["bg_distill"] = float(bg_loss)
+                            loss = (
+                                loss_value + distill_bg_weight * bg_loss,
+                                loss_details,
+                            )
                     all_loss += float(loss)
                     all_loss_details = merge_chunk_dict(
                         all_loss_details, loss_details, chunk_id * chunk_size

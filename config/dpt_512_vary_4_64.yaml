@@ -1,7 +1,9 @@
 model: "ARCroco3DStereo(ARCroco3DStereoConfig(freeze='encoder', state_size=768, state_pe='2d', pos_embed='RoPE100', rgb_head=True, pose_head=True, patch_embed_cls='ManyAR_PatchEmbed', img_size=(512, 512), head_type='dpt', output_mode='pts3d+pose', depth_mode=('exp', -inf, inf), conf_mode=('exp', 1, inf), pose_mode=('exp', -inf, inf), enc_embed_dim=1024, enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12, dec_num_heads=12, landscape_only=False))"
 pretrained: cut3r_512_dpt_4_64.pth
+teacher_ckpt: /mnt/raid/lin/CUT3R/checkpoints/cut3r_512_dpt_4_64.pth
+distill_bg_weight: 0.1
 load_only_encoder: False
-long_context: True
+long_context: False
 fixed_length: False
 resume: null
 benchmark: False
