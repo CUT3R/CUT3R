@@ -387,12 +387,19 @@ class PointCloudViewer:
         def _(event: viser.GuiEvent) -> None:
             self.fourd = False
 
+        # Focal length (pixels) of the virtual camera used for raymap probing.
+        # Default to the focal length estimated for this sequence so that the
+        # probing view is in-distribution w.r.t. the observed frames.
+        try:
+            initial_focal = float(np.median(cam_dict["focal"]))
+        except (KeyError, TypeError, ValueError):
+            initial_focal = 533.0
         self.focal_slider = self.server.add_gui_slider(
             "Focal Length",
             min=0.1,
             max=99999,
             step=1,
-            initial_value=533,
+            initial_value=initial_focal,
         )
 
         self.psize_slider = self.server.add_gui_slider(
@@ -509,23 +516,23 @@ class PointCloudViewer:
         def _(_) -> None:
             try:
                 cam = self.get_camera_state(client)
-                cam.fov = 2 * np.arctan(self.size / self.focal_slider.value)
-                cam.aspect = (512 / 384) if self.size==512 else 1.0
+                h_img, w_img = (384, 512) if self.size == 512 else (224, 224)
+                focal = float(self.focal_slider.value)
+                # vertical fov of the ray bundle that is actually sent to the
+                # model, so the frustum drawn below matches what was probed
+                cam.fov = 2 * np.arctan(h_img / 2 / focal)
+                cam.aspect = w_img / h_img
                 pose = cam.c2w
-                if self.size == 512:
-                    intrins = self.generate_pseudo_intrinsics(384, 512)
-                    raymap = torch.from_numpy(self.get_ray_map(pose, 384, 512, intrins))[
-                        None
-                    ].float()
-                else:
-                    intrins = self.generate_pseudo_intrinsics(224, 224)
-                    raymap = torch.from_numpy(self.get_ray_map(pose, 224, 224, intrins))[
-                        None
-                    ].float()
-                
-                
+                intrins = np.array(
+                    [[focal, 0, w_img // 2], [0, focal, h_img // 2], [0, 0, 1]],
+                    dtype=np.float32,
+                )
+                raymap = torch.from_numpy(
+                    self.get_ray_map(pose, h_img, w_img, intrins)
+                )[None].float()
+
                 view = {
-                    "img": torch.full((1, 3, 384, 512), torch.nan) if self.size==512 else torch.full((1, 3, 224, 224), torch.nan),
+                    "img": torch.full((1, 3, h_img, w_img), torch.nan),
                     "ray_map": raymap,
                     "true_shape": torch.from_numpy(np.int32([raymap.shape[1:-1]])),
                     "idx": self.num_frames + 1,
